@@ -4,7 +4,6 @@ import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 import { toast } from "sonner";
-import { IndexeddbPersistence } from "y-indexeddb";
 import * as Y from "yjs";
 import { supportsPassiveListener } from "@shared/utils/browser";
 import Editor, { Props as EditorProps } from "~/components/Editor";
@@ -48,7 +47,6 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
   const [showCursorNames, setShowCursorNames] = React.useState(false);
   const [remoteProvider, setRemoteProvider] =
     React.useState<HocuspocusProvider | null>(null);
-  const [isLocalSynced, setLocalSynced] = React.useState(false);
   const [isRemoteSynced, setRemoteSynced] = React.useState(false);
   const [ydoc] = React.useState(() => new Y.Doc());
   const token = auth.collaborationToken;
@@ -63,7 +61,6 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
   React.useLayoutEffect(() => {
     const debug = env.ENVIRONMENT === "development";
     const name = `document.${documentId}`;
-    const localProvider = new IndexeddbPersistence(name, ydoc);
     const provider = new HocuspocusProvider({
       url: `${env.COLLABORATION_URL}/collaboration`,
       name,
@@ -124,10 +121,6 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
     };
 
     provider.on("awarenessChange", showCursorNames);
-    localProvider.on("synced", () =>
-      // only set local storage to "synced" if it's loaded a non-empty doc
-      setLocalSynced(!!ydoc.get("default")._start)
-    );
     provider.on("synced", () => {
       presence.touch(documentId, currentUser.id, false);
       setRemoteSynced(true);
@@ -155,9 +148,6 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
           message: ev.message,
         })
       );
-      localProvider.on("synced", () =>
-        Logger.debug("collaboration", "local synced")
-      );
     }
 
     provider.on("status", (ev: ConnectionStatusEvent) => {
@@ -173,7 +163,6 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
       window.removeEventListener("wheel", finishObserving);
       window.removeEventListener("scroll", syncScrollPosition);
       provider?.destroy();
-      void localProvider?.destroy();
       setRemoteProvider(null);
       ui.setMultiplayerStatus(undefined, undefined);
     };
@@ -215,10 +204,10 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
   }, [remoteProvider, user, ydoc, props.extensions]);
 
   React.useEffect(() => {
-    if (isLocalSynced && isRemoteSynced) {
+    if (isRemoteSynced) {
       void onSynced?.();
     }
-  }, [onSynced, isLocalSynced, isRemoteSynced]);
+  }, [onSynced, isRemoteSynced]);
 
   // Disconnect the realtime connection while idle. `isIdle` also checks for
   // page visibility and will immediately disconnect when a tab is hidden.
@@ -267,7 +256,7 @@ function MultiplayerEditor({ onSynced, ...props }: Props, ref: any) {
 
   // while the collaborative document is loading, we render a version of the
   // document from the last text cache in read-only mode if we have it.
-  const showCache = !isLocalSynced && !isRemoteSynced;
+  const showCache = !isRemoteSynced;
 
   return (
     <>
