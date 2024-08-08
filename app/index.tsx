@@ -33,6 +33,17 @@ void PluginManager.loadPlugins();
 initI18n(env.DEFAULT_LANGUAGE);
 const element = window.document.getElementById("root");
 
+// TEMP: Clear all indexedDB databases on page load
+window.indexedDB.databases().then(function (databases) {
+  if (databases.length > 0) {
+    for (const database of databases) {
+      if (database.name) {
+        window.indexedDB.deleteDatabase(database.name);
+      }
+    }
+  }
+});
+
 history.listen(() => {
   requestAnimationFrame(() =>
     window.dispatchEvent(new Event("location-changed"))
