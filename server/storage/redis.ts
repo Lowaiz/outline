@@ -53,7 +53,9 @@ export default class RedisAdapter extends Redis {
       `${connectionNamePrefix}:${env.SERVICES.join("-")}` +
       (connectionNameSuffix ? `:${connectionNameSuffix}` : "");
 
-    // Apply keyPrefix only if not skipped (Bull clients need to skip this)
+    // Apply keyPrefix only if not skipped. Bull clients need to skip this because
+    // Bull's Lua scripts construct keys at runtime without awareness of ioredis's
+    // keyPrefix configuration.
     const keyPrefixOption =
       !skipKeyPrefix && env.REDIS_KEY_PREFIX
         ? { keyPrefix: env.REDIS_KEY_PREFIX }
@@ -128,8 +130,9 @@ export default class RedisAdapter extends Redis {
   }
 
   /**
-   * A Redis adapter for Bull queue operations. Bull cannot use ioredis's
-   * keyPrefix option because it creates keys dynamically in Lua scripts.
+   * A Redis adapter for Bull queue operations. Bull's Lua scripts construct
+   * keys at runtime without awareness of ioredis's keyPrefix, so we use
+   * Bull's native `prefix` option instead.
    */
   public static get defaultBullClient(): RedisAdapter {
     return (
@@ -142,8 +145,8 @@ export default class RedisAdapter extends Redis {
   }
 
   /**
-   * A Redis subscriber for Bull queue operations. Bull cannot use ioredis's
-   * keyPrefix option because it creates keys dynamically in Lua scripts.
+   * A Redis subscriber for Bull queue operations. See defaultBullClient for
+   * details on why Bull requires separate clients without ioredis keyPrefix.
    */
   public static get defaultBullSubscriber(): RedisAdapter {
     return (
