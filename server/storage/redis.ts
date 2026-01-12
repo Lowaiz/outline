@@ -14,6 +14,7 @@ const defaultOptions: RedisOptions = {
   enableReadyCheck: false,
   showFriendlyErrorStack: env.isDevelopment,
   keepAlive: 10000,
+  keyPrefix: env.REDIS_KEY_PREFIX,
 
   retryStrategy(times: number) {
     if (times === 1) {
