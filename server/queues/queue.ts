@@ -26,15 +26,16 @@ export function createQueue(
     createClient(type) {
       switch (type) {
         case "client":
-          return Redis.defaultClient;
+          return Redis.defaultBullClient;
 
         case "subscriber":
-          return Redis.defaultSubscriber;
+          return Redis.defaultBullSubscriber;
 
         case "bclient":
           return new Redis(env.REDIS_URL, {
             maxRetriesPerRequest: null,
             connectionNameSuffix: "bull",
+            skipKeyPrefix: true,
           });
 
         default:
