@@ -16,7 +16,7 @@ export function createQueue(
   // Bull's prefix for Redis keys. If REDIS_KEY_PREFIX is set, prepend it to
   // the default 'bull' prefix, otherwise use 'bull' as the default.
   const bullKeyPrefix = env.REDIS_KEY_PREFIX
-    ? `${env.REDIS_KEY_PREFIX}bull`
+    ? `${env.REDIS_KEY_PREFIX}:bull`
     : "bull";
 
   // Notes on reusing Redis connections for Bull:
